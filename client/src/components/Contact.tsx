@@ -6,17 +6,59 @@ import { Card } from '@/components/ui/card';
 import { Send } from 'lucide-react';
 import lloydThumbsUp from '@assets/generated_images/anime_character_lloyd_approving_with_thumbs_up.png';
 import { useToast } from '@/hooks/use-toast';
+import * as React from 'react';
 
 export default function Contact() {
   const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [name, setName] = React.useState("");
+  const [email, setEmail] = React.useState("");
+  const [projectType, setProjectType] = React.useState("");
+  const [details, setDetails] = React.useState("");
+  const [isSending, setIsSending] = React.useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast({
-      title: "Proposal Sent!",
-      description: "Lloyd has received your request. He smells profit!",
-      duration: 5000,
-    });
+    setIsSending(true);
+
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, email, projectType, details }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        toast({
+          title: 'Failed to send proposal',
+          description: data?.message || 'Please check your input and try again.',
+          duration: 5000,
+        });
+        return;
+      }
+
+      toast({
+        title: 'Proposal Sent!',
+        description: "Lloyd has received your request. He smells profit!",
+        duration: 5000,
+      });
+
+      // reset form
+      setName('');
+      setEmail('');
+      setProjectType('');
+      setDetails('');
+    } catch (err) {
+      toast({
+        title: 'Network Error',
+        description: 'Could not reach the server. Please try again later.',
+        duration: 5000,
+      });
+    } finally {
+      setIsSending(false);
+    }
   };
 
   return (
@@ -38,11 +80,11 @@ export default function Contact() {
               <p className="text-primary-foreground/80 text-xl mb-8 max-w-lg leading-relaxed">
                 Do you have a project that needs the "Greatest Developer" touch? Send me a proposal! I accept gold coins, gems, or standard wire transfers.
               </p>
-              
+
               <div className="hidden lg:block">
-                <motion.img 
-                  src={lloydThumbsUp} 
-                  alt="Lloyd Thumbs Up" 
+                <motion.img
+                  src={lloydThumbsUp}
+                  alt="Lloyd Thumbs Up"
                   className="w-64 drop-shadow-2xl transform -rotate-12"
                   animate={{ y: [0, -10, 0] }}
                   transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
@@ -65,23 +107,23 @@ export default function Contact() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-sm font-bold text-muted-foreground">Your Name</label>
-                    <Input placeholder="Baron/Baroness..." className="bg-slate-50 border-slate-200" />
+                    <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Baron/Baroness..." className="bg-slate-50 border-slate-200" />
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-bold text-muted-foreground">Contact Raven (Email)</label>
-                    <Input placeholder="noble@estate.com" className="bg-slate-50 border-slate-200" />
+                    <Input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="noble@estate.com" className="bg-slate-50 border-slate-200" />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-muted-foreground">Project Type</label>
-                  <Input placeholder="Mobile App, Dashboard, Kingdom Management System..." className="bg-slate-50 border-slate-200" />
+                  <Input value={projectType} onChange={(e) => setProjectType(e.target.value)} placeholder="Mobile App, Dashboard, Kingdom Management System..." className="bg-slate-50 border-slate-200" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-bold text-muted-foreground">Project Details</label>
-                  <Textarea placeholder="Tell me about your grand vision..." className="min-h-[120px] bg-slate-50 border-slate-200" />
+                  <Textarea value={details} onChange={(e) => setDetails(e.target.value)} placeholder="Tell me about your grand vision..." className="min-h-[120px] bg-slate-50 border-slate-200" />
                 </div>
-                <Button type="submit" size="lg" className="w-full bg-primary hover:bg-primary/90 text-white font-bold py-6 text-lg">
-                  <Send className="w-5 h-5 mr-2" /> Send Proposal
+                <Button disabled={isSending} type="submit" size="lg" className="w-full bg-primary hover:bg-primary/90 text-white font-bold py-6 text-lg">
+                  <Send className="w-5 h-5 mr-2" /> {isSending ? 'Sending...' : 'Send Proposal'}
                 </Button>
               </form>
             </Card>
